@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.segov.api.clip.ClipCandidateNotFoundException;
 import com.segov.api.processing.InvalidProcessingJobStateException;
 import com.segov.api.processing.ProcessingJobNotFoundException;
 import com.segov.api.project.ProjectNotFoundException;
@@ -19,6 +20,22 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+	@ExceptionHandler(ClipCandidateNotFoundException.class)
+	public ResponseEntity<Map<String, Object>> handleClipCandidateNotFound(
+			ClipCandidateNotFoundException exception,
+			HttpServletRequest request
+	) {
+		Map<String, Object> body = Map.of(
+				"timestamp", LocalDateTime.now(),
+				"status", HttpStatus.NOT_FOUND.value(),
+				"error", HttpStatus.NOT_FOUND.getReasonPhrase(),
+				"message", exception.getMessage(),
+				"path", request.getRequestURI()
+		);
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+	}
 
 	@ExceptionHandler(ProjectNotFoundException.class)
 	public ResponseEntity<Map<String, Object>> handleProjectNotFound(

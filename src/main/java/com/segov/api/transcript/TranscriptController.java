@@ -1,5 +1,7 @@
 package com.segov.api.transcript;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +25,20 @@ public class TranscriptController {
 				transcript.getLanguage(),
 				transcript.getCreatedAt()
 		);
+
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping("/api/videos/{videoId}/transcript/segments")
+	public ResponseEntity<List<TranscriptSegmentResponse>> getTranscriptSegmentsByVideoId(@PathVariable Long videoId) {
+		List<TranscriptSegmentResponse> response = transcriptService.getSegmentsByVideoId(videoId).stream()
+				.map(segment -> new TranscriptSegmentResponse(
+						segment.getId(),
+						segment.getStartMs(),
+						segment.getEndMs(),
+						segment.getText()
+				))
+				.toList();
 
 		return ResponseEntity.ok(response);
 	}

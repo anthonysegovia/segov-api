@@ -1,7 +1,10 @@
 package com.segov.api.transcript;
 
+import java.util.List;
+
 public record TranscriptionResult(
 		String text,
-		String language
+		String language,
+		List<TranscriptionSegmentResult> segments
 ) {
 }

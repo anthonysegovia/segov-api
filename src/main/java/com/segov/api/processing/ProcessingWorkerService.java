@@ -7,7 +7,10 @@ import com.segov.api.media.VideoMetadata;
 import com.segov.api.media.VideoMetadataService;
 import com.segov.api.transcript.Transcript;
 import com.segov.api.transcript.TranscriptRepository;
+import com.segov.api.transcript.TranscriptSegment;
+import com.segov.api.transcript.TranscriptSegmentRepository;
 import com.segov.api.transcript.TranscriptionResult;
+import com.segov.api.transcript.TranscriptionSegmentResult;
 import com.segov.api.transcript.TranscriptionService;
 import com.segov.api.video.SourceVideo;
 import com.segov.api.video.SourceVideoRepository;
@@ -26,6 +29,7 @@ public class ProcessingWorkerService {
 	private final SourceVideoRepository sourceVideoRepository;
 	private final ExtractedAudioRepository extractedAudioRepository;
 	private final TranscriptRepository transcriptRepository;
+	private final TranscriptSegmentRepository transcriptSegmentRepository;
 	private final VideoMetadataService videoMetadataService;
 	private final AudioExtractionService audioExtractionService;
 	private final TranscriptionService transcriptionService;
@@ -35,6 +39,7 @@ public class ProcessingWorkerService {
 			SourceVideoRepository sourceVideoRepository,
 			ExtractedAudioRepository extractedAudioRepository,
 			TranscriptRepository transcriptRepository,
+			TranscriptSegmentRepository transcriptSegmentRepository,
 			VideoMetadataService videoMetadataService,
 			AudioExtractionService audioExtractionService,
 			TranscriptionService transcriptionService
@@ -43,6 +48,7 @@ public class ProcessingWorkerService {
 		this.sourceVideoRepository = sourceVideoRepository;
 		this.extractedAudioRepository = extractedAudioRepository;
 		this.transcriptRepository = transcriptRepository;
+		this.transcriptSegmentRepository = transcriptSegmentRepository;
 		this.videoMetadataService = videoMetadataService;
 		this.audioExtractionService = audioExtractionService;
 		this.transcriptionService = transcriptionService;
@@ -77,7 +83,20 @@ public class ProcessingWorkerService {
 			transcript.setExtractedAudio(extractedAudio);
 			transcript.setText(transcriptionResult.text());
 			transcript.setLanguage(transcriptionResult.language());
-			transcriptRepository.save(transcript);
+			Transcript savedTranscript = transcriptRepository.save(transcript);
+
+			if (transcriptionResult.segments() != null) {
+				for (TranscriptionSegmentResult segmentResult : transcriptionResult.segments()) {
+					if (segmentResult != null && segmentResult.text() != null && !segmentResult.text().isBlank()) {
+						TranscriptSegment segment = new TranscriptSegment();
+						segment.setTranscript(savedTranscript);
+						segment.setStartMs(segmentResult.startMs());
+						segment.setEndMs(segmentResult.endMs());
+						segment.setText(segmentResult.text());
+						transcriptSegmentRepository.save(segment);
+					}
+				}
+			}
 
 			sourceVideo.setStatus(SourceVideoStatus.READY);
 			sourceVideoRepository.save(sourceVideo);
